@@ -1,28 +1,23 @@
-from rest_framework import generics, permissions
-from rest_framework.authtoken.models import Token
-from rest_framework.response import Response
-from django.contrib.auth import authenticate
-from .models import CustomUser
-from .serializers import UserSerializer, RegisterSerializer
+from django.http import JsonResponse
+from django.contrib.auth import get_user_model
+from rest_framework.decorators import api_view
 
-class RegisterView(generics.CreateAPIView):
-    queryset = CustomUser.objects.all()
-    serializer_class = RegisterSerializer
+User = get_user_model()
 
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()
-        token, created = Token.objects.get_or_create(user=user)
-        return Response({'token': token.key, 'user': UserSerializer(user).data})
+@api_view(['POST'])
+def follow_user(request, user_id):
+    user_to_follow = User.objects.get(id=user_id)
+    user = request.user  # Assuming request.user is authenticated
 
-class LoginView(generics.GenericAPIView):
-    def post(self, request, *args, **kwargs):
-        username = request.data.get('username')
-        password = request.data.get('password')
-        user = authenticate(username=username, password=password)
-        if user:
-            token, created = Token.objects.get_or_create(user=user)
-            return Response({'token': token.key, 'user': UserSerializer(user).data})
-        return Response({'error': 'Invalid Credentials'}, status=400)
+    # Add the user to the following list of the current user
+    user.following.add(user_to_follow)
+    return JsonResponse({"message": "Followed successfully"})
 
+@api_view(['DELETE'])
+def unfollow_user(request, user_id):
+    user_to_unfollow = User.objects.get(id=user_id)
+    user = request.user  # Assuming request.user is authenticated
+
+    # Remove the user from the following list of the current user
+    user.following.remove(user_to_unfollow)
+    return JsonResponse({"message": "Unfollowed successfully"})

@@ -1,21 +1,20 @@
-from rest_framework import viewsets, permissions
-from .models import Post, Comment
-from .serializers import PostSerializer, CommentSerializer
+from rest_framework import permissions
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from .models import Post
+from django.contrib.auth import get_user_model
 
-class PostViewSet(viewsets.ModelViewSet):
-    queryset = Post.objects.all()
-    serializer_class = PostSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+User = get_user_model()
 
-    def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+class FeedView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
 
-class CommentViewSet(viewsets.ModelViewSet):
-    queryset = Comment.objects.all()
-    serializer_class = CommentSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    def get(self, request):
+        # Get the list of users that the current user follows
+        followed_users = request.user.following.all()
+        posts = Post.objects.filter(user__in=followed_users).order_by('-created_at')
 
-    def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+        # Serialize the posts
+        post_data = PostSerializer(posts, many=True).data
 
-
+        return Response(post_data)
