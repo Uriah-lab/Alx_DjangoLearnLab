@@ -1,0 +1,1 @@
+A basic Django project setup for learning Django development.
