@@ -7,10 +7,10 @@ django.setup()
 
 from relationship_app.models import Author, Book, Library, Librarian
 
-# Query 1: Retrieve all books by a specific author
+# Query 1: Retrieve all books by a specific author using objects.filter
 def books_by_author(author_name):
     author = Author.objects.get(name=author_name)
-    books = author.books.all()
+    books = Book.objects.filter(author=author)  # Using objects.filter(author=author)
     print(f"Books by {author_name}:")
     for book in books:
         print(f"- {book.title}")
@@ -31,7 +31,6 @@ def librarian_for_library(library_name):
 
 # Run Sample Queries
 if __name__ == "__main__":
-    # Ensure sample data is created first!
     books_by_author("J.K. Rowling")
     books_in_library("Central Library")
     librarian_for_library("Central Library")
